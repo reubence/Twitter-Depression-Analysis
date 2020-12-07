@@ -11,4 +11,9 @@ dash-table
 dash-auth
 plotly-express
 requests
+xlrd
+gspread
+tweepy
 flask
+openpyxl
+instaloader
