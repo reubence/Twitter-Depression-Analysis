@@ -18,3 +18,4 @@ flask
 openpyxl
 instaloader
 bs4
+nltk
