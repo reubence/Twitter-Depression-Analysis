@@ -17,3 +17,4 @@ tweepy
 flask
 openpyxl
 instaloader
+bs4
