@@ -10,8 +10,9 @@ from dash.dependencies import Output, Input, State
 
 stylesheets = 'https://stackpath.bootstrapcdn.com/bootswatch/4.5.0/cyborg/bootstrap.min.css'
 
-server = flask.Flask(__name__)
+# server = flask.Flask(__name__)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LUX])
+server = app.server
 
 emoticons_sad = set([
     ':L', ':-/', '>:/', ':S', '>:[', ':@', ':-(', ':[', ':-||', '=L', ':<',
