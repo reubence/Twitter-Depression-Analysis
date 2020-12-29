@@ -33,6 +33,7 @@ emoticons_happy = set([
     '<3'
     ])
 
+nltk.download("punkt")
 
 def preprocess(text):  # text pre-processing function
     text = str(text)
