@@ -10,12 +10,7 @@ dash-bootstrap-components
 dash-table
 dash-auth
 plotly-express
-requests
-xlrd
-gspread
-tweepy
 flask
-openpyxl
-instaloader
-bs4
 nltk
+snscrape
+scipy
