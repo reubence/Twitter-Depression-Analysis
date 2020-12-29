@@ -111,9 +111,9 @@ def output_text(value):
         for i, tweet in enumerate(sntwitter.TwitterSearchScraper('from:'+str(value)).get_items()):
             if i > 10:
                 break
-            tweets_list1.append([tweet.date, tweet.id, tweet.content, tweet.user.username])
+            tweets_list1.append([tweet.date, tweet.id, tweet.content])
         # Creating a dataframe from the tweets list above
-        tweets = pd.DataFrame(tweets_list1, columns=['Datetime', "TweetID", 'Text', "username"])
+        tweets = pd.DataFrame(tweets_list1, columns=['Datetime', "TweetID", 'Text'])
         Sentiments = []
         timings = []
         lexicon_count = []
