@@ -112,64 +112,77 @@ def output_text(value):
             if i > 10:
                 break
             tweets_list1.append([tweet.date, tweet.id, tweet.content, tweet.user.username])
-
         # Creating a dataframe from the tweets list above
         tweets = pd.DataFrame(tweets_list1, columns=['Datetime', "TweetID", 'Text', "username"])
-        clean_tweets = []
         Sentiments = []
         timings = []
         lexicon_count = []
+        # print(tweets["Text"][7])
         for i,r in tweets.iterrows():
-
+            print("i",i)
             latest = preprocess(r["Text"])
-            print(latest)
-            compound = sid.polarity_scores([latest if latest != "" else "happy"])
-            Sentiments.append([1 if compound["compound"]>=-100 else 100]) # 1 = happy
-            clean_tweets.append(latest.strip())
+            print("latest",type(latest))
+            if type(latest)==type("yolo"):
+                compound = sid.polarity_scores(latest)
+                print("compppoung",compound)
+                if compound["compound"] >= 0:
+                    Sentiments.append(1)
+                else:
+                    Sentiments.append(-1) # 1 = happy
+
+                tokens = nltk.word_tokenize(latest)
+                for i in tokens:
+                    if i in lexicon_words:
+                        lexicon_count.append(-1)
+                        break
+                    elif i == tokens[-1]:
+                        lexicon_count.append(1)
+
+            else:
+                Sentiments.append(0)
+            # clean_tweets.append(latest.strip())
             temp = str(r["Datetime"])
             if datetime.datetime.strptime("01:30:00","%H:%M:%S") <= datetime.datetime.strptime(temp[11:18],"%H:%M:%S") and datetime.datetime.strptime("04:30:00", "%H:%M:%S") >= datetime.datetime.strptime(temp[11:18],"%H:%M:%S"):
-                timings.append(-100) #1 = yes awake late
-            else: timings.append(100)
+                timings.append(-1) #1 = yes awake late
+            else: timings.append(1)
 
-            tokens = nltk.word_tokenize(latest)
-            for i in tokens:
-                if i in lexicon_words:
-                    lexicon_count.append(-100)
-                    break
-                else:
-                    lexicon_count.append(100)
-            print(lexicon_count)
-            print(Sentiments)
-            print(timings)
+        print("lexi",lexicon_count)
+        print("Sentis",Sentiments)
+        print("Times",timings)
 
-        from scipy.stats import ttest_1samp
+        t = (np.mean(Sentiments) - (-1))/np.std(Sentiments)/len(Sentiments)
+        import scipy.stats
+        pval = scipy.stats.t.sf(abs(t), df=len(Sentiments)-1)
 
-        tset, pval = ttest_1samp(Sentiments, 1)
         print("p - values", pval)
         if pval < 0.05:  # alpha value is 0.05 or 5%
             result_sentis = "Result of Negative Opinion Analysis :  We are Rejecting Null Hypothesis"
         else:
             result_sentis = "Result of Negative Opinion Analysis :  We are Accepting Null Hypothesis"
 
-        tset, pval = ttest_1samp(timings, 1)
-        print("p - values", pval)
-        if pval < 0.05:  # alpha value is 0.05 or 5%
-            result_time = "Result of Tweet Timing Analysis :  We are Rejecting Null Hypothesis"
-        else:
-            result_time = "Result of Tweet Timing Analysis :  We are Accepting Null Hypothesis"
 
-        tset, pval = ttest_1samp(lexicon_count, 1)
+        t = (np.mean(lexicon_count) - (-1))/np.std(lexicon_count)/len(lexicon_count)
+        import scipy.stats
+        pval = scipy.stats.t.sf(abs(t), df=len(lexicon_count)-1)
+
         print("p - values", pval)
         if pval < 0.05:  # alpha value is 0.05 or 5%
             result_lexi = "Result of Lexicon Base Analysis :  We are Rejecting Null Hypothesis"
         else:
             result_lexi = "Result of Lexicon Base Analysis :  We are Accepting Null Hypothesis"
 
-        return ([html.H5(result_sentis),html.H5(result_time),html.H5(result_lexi)])
 
+        t = (np.mean(timings) - (-1))/np.std(timings)/len(timings)
+        import scipy.stats
+        pval = scipy.stats.t.sf(abs(t), df=len(timings)-1)
 
+        print("p - values", pval)
+        if pval < 0.05:  # alpha value is 0.05 or 5%
+            result_time = "Result of Tweet Timing Analysis :  We are Rejecting Null Hypothesis"
+        else:
+            result_time = "Result of Tweet Timing Analysis :  We are Accepting Null Hypothesis"
 
-
+        return ([html.H5(result_sentis), html.H5(result_lexi),html.H5(result_time)])
 
 
 @app.callback(
