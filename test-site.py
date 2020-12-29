@@ -4,14 +4,14 @@ import dash_bootstrap_components as dbc
 import dash_html_components as html
 import requests
 from bs4 import BeautifulSoup
-import datetime
 import nltk
 import numpy as np
 import re
 from dash.dependencies import Output, Input, State
 import snscrape.modules.twitter as sntwitter
 import pandas as pd
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import pickle
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 stylesheets = 'https://stackpath.bootstrapcdn.com/bootswatch/4.5.0/cyborg/bootstrap.min.css'
 
@@ -57,9 +57,8 @@ with open("Lexicon-Word.txt", "r") as f:
     for line in f:
         lexicon_words.extend(line.split())
 
-
-nltk.download('vader_lexicon')
-sid = SentimentIntensityAnalyzer()
+loaded_model = pickle.load(open("pipeline.sav", 'rb'))
+tf_vec = pickle.load(open("tfidf.sav", 'rb'))
 
 
 nav = dbc.Navbar(children=[
@@ -85,7 +84,7 @@ html.Div(
             dbc.Button("BEGIN ANALYSIS", color="primary", className="submit-val", id = "open"),
             dbc.Modal(
                 [
-                    dbc.ModalHeader(html.H1("Null Hypothesis : This Individual is depressed")),
+                    dbc.ModalHeader("The Person is :"),
                     dbc.ModalBody([dbc.Spinner(color="primary", size="md")], id="depres"),
                     dbc.ModalFooter(
                         dbc.Button("Close", id="close", className="ml-auto")
@@ -109,7 +108,7 @@ def output_text(value):
     # Using TwitterSearchScraper to scrape data and append tweets to list
     if value != "":
         for i, tweet in enumerate(sntwitter.TwitterSearchScraper('from:'+str(value)).get_items()):
-            if i > 10:
+            if i > 5:
                 break
             tweets_list1.append([tweet.date, tweet.id, tweet.content, tweet.user.username])
 
@@ -121,54 +120,14 @@ def output_text(value):
         lexicon_count = []
         for i,r in tweets.iterrows():
 
-            latest = preprocess(r["Text"])
-            print(latest)
-            compound = sid.polarity_scores([latest if latest != "" else "happy"])
-            Sentiments.append([1 if compound["compound"]>=-100 else 100]) # 1 = happy
+            latest = [preprocess(r["Text"])]
+            print(type(latest))
+            tfg = tf_vec.transform(latest)
+            Sentiments.append(loaded_model.predict(tfg))
             clean_tweets.append(latest.strip())
-            temp = str(r["Datetime"])
-            if datetime.datetime.strptime("01:30:00","%H:%M:%S") <= datetime.datetime.strptime(temp[11:18],"%H:%M:%S") and datetime.datetime.strptime("04:30:00", "%H:%M:%S") >= datetime.datetime.strptime(temp[11:18],"%H:%M:%S"):
-                timings.append(-100) #1 = yes awake late
-            else: timings.append(100)
+            timings.append(r["Datetime"])
 
-            tokens = nltk.word_tokenize(latest)
-            for i in tokens:
-                if i in lexicon_words:
-                    lexicon_count.append(-100)
-                    break
-                else:
-                    lexicon_count.append(100)
-            print(lexicon_count)
-            print(Sentiments)
-            print(timings)
-
-        from scipy.stats import ttest_1samp
-
-        tset, pval = ttest_1samp(Sentiments, 1)
-        print("p - values", pval)
-        if pval < 0.05:  # alpha value is 0.05 or 5%
-            result_sentis = "Result of Negative Opinion Analysis :  We are Rejecting Null Hypothesis"
-        else:
-            result_sentis = "Result of Negative Opinion Analysis :  We are Accepting Null Hypothesis"
-
-        tset, pval = ttest_1samp(timings, 1)
-        print("p - values", pval)
-        if pval < 0.05:  # alpha value is 0.05 or 5%
-            result_time = "Result of Tweet Timing Analysis :  We are Rejecting Null Hypothesis"
-        else:
-            result_time = "Result of Tweet Timing Analysis :  We are Accepting Null Hypothesis"
-
-        tset, pval = ttest_1samp(lexicon_count, 1)
-        print("p - values", pval)
-        if pval < 0.05:  # alpha value is 0.05 or 5%
-            result_lexi = "Result of Lexicon Base Analysis :  We are Rejecting Null Hypothesis"
-        else:
-            result_lexi = "Result of Lexicon Base Analysis :  We are Accepting Null Hypothesis"
-
-        return ([html.H5(result_sentis),html.H5(result_time),html.H5(result_lexi)])
-
-
-
+        return html.H2(clean_tweets)
 
 
 
